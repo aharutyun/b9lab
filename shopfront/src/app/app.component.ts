@@ -16,7 +16,8 @@ export class AppComponent {
   account: any;
 
   id: number;
-  stock: string;
+  stock: number;
+  name: string;
   price: number;
 
   productId: number;
@@ -69,7 +70,8 @@ export class AppComponent {
           const product = {
             id: this.toNumber(_product[0]),
             stock: _product[1],
-            price: this.toNumber(_product[2])
+            name: _product[2],
+            price: this.toNumber(_product[3])
           };
           this.products.push(product);
           this.extractProductByIndex(_currentProductIndex + 1, _productsCount);
@@ -116,11 +118,12 @@ export class AppComponent {
       console.log('Gas: ' + _gas);
     });*/
     this.contract
-      .addProduct(this.id, this.stock, this.price, {from: this.account, gas: 200000})
+      .addProduct(this.id, this.stock, this.name, this.price, {from: this.account, gas: 200000})
       .then(txProductAdded => {
         if (this.errorHandler(txProductAdded)) {
           this.id = null;
           this.stock = null;
+          this.name = null;
           this.price = null;
           this.refreshProducts();
         }
@@ -134,6 +137,7 @@ export class AppComponent {
       .then((txObject) => {
         if (this.errorHandler(txObject)) {
           this.refreshBalance();
+          this.refreshProducts();
         }
       }).catch(error => {
         alert('Failed: ' + error);
@@ -149,11 +153,13 @@ export class AppComponent {
   }
 
   private refreshBalance() {
-    this.contract.getBalance.call({from: this.account}).
-    then(balance => {
-      this.contractBalance = balance;
-    }).catch(error => {
-      alert('Failed: ' + error);
+    const that = this;
+    this.web3.eth.getBalance(this.contract.address, this.web3.eth.defaultBlock, function(error, balance) {
+      if (error) {
+        alert('Failed: ' + error);
+      } else {
+        that.contractBalance = balance;
+      }
     });
   }
 

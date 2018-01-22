@@ -6,6 +6,10 @@
       <td><input placeholder="id" [(ngModel)]="id"></td>
     </tr>
     <tr>
+      <td>Name:</td>
+      <td><input placeholder="name" [(ngModel)]="name"></td>
+    </tr>
+    <tr>
       <td>Stock:</td>
       <td><input placeholder="stock" [(ngModel)]="stock"></td>
     </tr>
@@ -31,22 +35,24 @@
   <table id="products">
     <tr>
       <th colspan="1" rowspan="2">Owner</th>
-      <th colspan="2">Address: {{account}}
+      <th colspan="3">Address: {{account}}
     </tr>
     <tr>
-      <th colspan="2">Balance: {{ownerBalance}}</th>
+      <th colspan="3">Balance: {{ownerBalance}}</th>
     </tr>
     <tr>
-      <th colspan="3">Contract Balance: {{contractBalance}}
+      <th colspan="4">Contract Balance: {{contractBalance}}
         <button (click)="withdraw()">Withdraw</button></th>
     </tr>
     <tr>
       <th>Produt Id</th>
+      <th>Produt Name</th>
       <th>Product stock</th>
       <th>Product price</th>
     </tr>
     <tr *ngFor="let product of products">
       <td>{{product.id}}</td>
+      <td>{{product.name}}</td>
       <td>{{product.stock}}</td>
       <td>{{product.price}}</td>
     </tr>

@@ -3,13 +3,14 @@ pragma solidity ^0.4.4;
 contract Shopfront {
     address owner;
 
-    event LogProductPurchased(uint id, string stock, uint price);
-    event LogProductAdded(uint id, string stock, uint price);
+    event LogProductPurchased(uint id, uint stock, string name, uint price);
+    event LogProductAdded(uint id, uint stock, string name, uint price);
     event LogWithdrawSuccess(bool success);
 
     struct Product {
         uint price;
-        string stock;
+        uint stock;
+        string name;
     }
 
     mapping(uint => Product) products;
@@ -24,13 +25,13 @@ contract Shopfront {
         _;
     }
 
-    function addProduct(uint id, string stock, uint price)
+    function addProduct(uint id, uint stock, string name, uint price)
               onlyMe()
               external
               returns (bool success){
-        products[id] = Product(price, stock);
+        products[id] = Product(price, stock, name);
         ids.push(id);
-        LogProductAdded(id, products[id].stock, products[id].price);
+        LogProductAdded(id, products[id].stock, products[id].name, products[id].price);
         return true;
     }
 
@@ -42,20 +43,18 @@ contract Shopfront {
         return ids.length;
     }
 
-    function getProductAt(uint index) external constant returns (uint id, string stock, uint price) {
+    function getProductAt(uint index) external constant returns (uint id, uint stock, string name, uint price) {
         Product memory product = products[ids[index]];
-        return (ids[index], product.stock, product.price);
+        return (ids[index], product.stock, product.name, product.price);
     }
 
     function buyProduct(uint id)
                 payable
                 external {
         require(products[id].price == msg.value);
-        LogProductPurchased(id, products[id].stock, products[id].price);
-    }
-
-    function getBalance() external constant returns (uint) {
-        return this.balance;
+        require(products[id].stock > 0);
+        products[id].stock --;
+        LogProductPurchased(id, products[id].stock, products[id].name, products[id].price);
     }
 
     function withdraw() onlyMe() external {
