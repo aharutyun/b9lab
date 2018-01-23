@@ -20,6 +20,9 @@ export class AppComponent {
   name: string;
   price: number;
 
+  stockAddProdcutId: number;
+  stockAdded: number;
+
   productId: number;
   productPrice: number;
 
@@ -111,12 +114,19 @@ export class AppComponent {
     });
   }
 
+  addStock() {
+    this.contract.addStock(this.stockAddProdcutId, this.stockAdded, {from: this.account})
+    .then(txObject => {
+      if (this.errorHandler(txObject)) {
+        this.refreshProducts();
+      }
+    }).catch(error => {
+      alert('Failed: ' + error);
+    });
+  }
 
   addProduct() {
     console.log('Account: ' + this.account);
-    /*this.contract.addProduct.estimateGas(this.id, this.stock, this.price).then(_gas => {
-      console.log('Gas: ' + _gas);
-    });*/
     this.contract
       .addProduct(this.id, this.stock, this.name, this.price, {from: this.account, gas: 200000})
       .then(txProductAdded => {

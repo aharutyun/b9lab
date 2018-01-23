@@ -31,3 +31,14 @@
   background-color: blue;
   padding: 8px;
 }
+
+/********************************** add stock */
+#addStock {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+}
+
+#addStock td {
+  background-color: goldenrod;
+  padding: 8px;
+}

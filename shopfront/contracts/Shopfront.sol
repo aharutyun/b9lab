@@ -5,7 +5,7 @@ contract Shopfront {
 
     event LogProductPurchased(uint id, uint stock, string name, uint price);
     event LogProductAdded(uint id, uint stock, string name, uint price);
-    event LogWithdrawSuccess(bool success);
+    event LogSuccess(bool success);
 
     struct Product {
         uint price;
@@ -27,12 +27,18 @@ contract Shopfront {
 
     function addProduct(uint id, uint stock, string name, uint price)
               onlyMe()
-              external
-              returns (bool success){
+              external{
+        require(price != 0 && products[id].price == 0); //check already added product
         products[id] = Product(price, stock, name);
         ids.push(id);
         LogProductAdded(id, products[id].stock, products[id].name, products[id].price);
-        return true;
+        LogSuccess(true);
+    }
+
+    function addStock(uint productId, uint additionalStockAmount) external {
+        require(products[productId].price != 0);
+        products[productId].stock += additionalStockAmount;
+        LogSuccess(true);
     }
 
     function getOwner() external constant returns (address) {
@@ -59,6 +65,6 @@ contract Shopfront {
 
     function withdraw() onlyMe() external {
       owner.transfer(this.balance);
-      LogWithdrawSuccess(true);
+      LogSuccess(true);
     }
 }

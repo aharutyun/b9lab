@@ -23,6 +23,15 @@
   </table>
 
   <p></p>
+  <table id="addStock">
+    <tr>
+      <td><input placeholder="product id" [(ngModel)]="stockAddProdcutId"></td>
+      <td><input placeholder="stock amount" [(ngModel)]="stockAdded"></td>
+      <td><button (click)="addStock()">Add stock</button></td>
+    </tr>
+  </table>
+
+  <p></p>
   <table id="buyer">
     <tr>
       <td><input placeholder="buyer address" [(ngModel)]="buyerAddress" style="width: 310px"></td>
