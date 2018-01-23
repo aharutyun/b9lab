@@ -1,5 +1,5 @@
-var Splitter = artifacts.require("./Splitter.sol");
-var utils = require("./utils");
+const Splitter = artifacts.require("./Splitter.sol");
+const Utils = require("./utils");
 
 contract('Splitter', function(accounts) {
   var instance;
@@ -7,31 +7,27 @@ contract('Splitter', function(accounts) {
   const bob = accounts[1];
   const carol = accounts[2];
 
-  var bobBalance;
-  var carolBalance;
-
   const transferAmount = 100;
   const transferOddAmount = 99;
 
   it("split should devide transfer amount into 2 equal parts", function() {
-    return Splitter.deployed().then(function(_instance) {
-      instance = _instance;
-      bobBalance = web3.eth.getBalance(bob);
-      carolBalance = web3.eth.getBalance(carol);
+    return Splitter.new(bob, carol).then(function(_instance) {
+        instance = _instance;
       return instance.split({from: alice, value: transferAmount});
-    }).then(function(txHash) {
-      return web3.eth.getTransactionReceipt(txHash.tx);
-    }).then(function(_receipt) {
-      assert(_receipt.blockNumber != null);
-      const afterBobBalance = web3.eth.getBalance(bob);
-      const afterCarolBalance = web3.eth.getBalance(carol);
-      assert.strictEqual(afterBobBalance.toString(10), utils.sum(String(transferAmount/2), bobBalance.toString(10)));
-      assert.strictEqual(afterCarolBalance.toString(10), utils.sum(String(transferAmount/2), carolBalance.toString(10)));
+    }).then(function(_txObject) {
+        console.log(JSON.stringify(_txObject.logs));
+        Utils.handleSuccess(_txObject);
+        return instance.withdraw({from: bob});
+    }).then(function(_bobWithdrawObject) {
+        Utils.handleSuccess(_bobWithdrawObject);
+        return instance.withdraw({from: carol});
+    }).then(function (_carolWithdrawObject) {
+        Utils.handleSuccess(_carolWithdrawObject);
     });
   });
 
   it("split cannot be done by the person other than alice", function() {
-    return Splitter.deployed().then(function(_instance) {
+    return Splitter.new(bob, carol).then(function(_instance) {
       instance = _instance;
       return instance.split({from: bob, value: transferAmount});
     }).then(function(txHash) {
@@ -42,7 +38,7 @@ contract('Splitter', function(accounts) {
   });
 
   it("split cannot be done for odd amounts", function() {
-    return Splitter.deployed().then(function(_instance) {
+    return Splitter.new(bob, carol).then(function(_instance) {
         instance = _instance;
         return instance.split({from: alice, value: transferOddAmount});
     }).then(function(txHash) {
@@ -53,7 +49,7 @@ contract('Splitter', function(accounts) {
   });
 
   it("operation cannot be done after contract killed", function() {
-      return Splitter.deployed().then(function(_instance) {
+      return Splitter.new(bob, carol).then(function(_instance) {
           instance = _instance;
           return instance.kill({from: alice});
       }).then(function(txHash) {

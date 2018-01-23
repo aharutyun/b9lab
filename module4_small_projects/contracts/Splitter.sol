@@ -4,13 +4,17 @@ contract Splitter {
     address alice;
     address bob;
     address carol;
+    bool contractAlive;
 
-    bool contractAlive = true;
+    mapping(address => uint) recipientsBalances;
+
+    event LogSuccess(bool success);
 
     function Splitter(address _bob, address _carol) public {
-        alice = tx.origin;
+        alice = msg.sender;
         bob = _bob;
         carol = _carol;
+        contractAlive = true;
     }
 
     modifier onlyAlice() {
@@ -23,13 +27,33 @@ contract Splitter {
         _;
     }
 
-    function split() external payable onlyAlice() onlyContractAlive() {
+    function split()
+        onlyAlice()
+        onlyContractAlive()
+        external
+        payable  {
+
         require(msg.value % 2 == 0);
-        bob.send(msg.value / 2);
-        carol.send(msg.value / 2);
+
+        uint half = msg.value / 2;
+        recipientsBalances[bob] += half;
+        recipientsBalances[carol] += half;
+        LogSuccess(true);
     }
 
-    function kill() external onlyAlice() onlyContractAlive() returns (bool) {
+    function withdraw() onlyContractAlive() external {
+        require(recipientsBalances[msg.sender] != 0);
+        uint recipientBalance = recipientsBalances[msg.sender];
+        recipientsBalances[msg.sender] = 0;
+        msg.sender.transfer(recipientBalance);
+        LogSuccess(true);
+    }
+
+    function kill()
+        onlyAlice()
+        onlyContractAlive()
+        external
+        returns (bool success) {
         contractAlive = false;
         return true;
     }

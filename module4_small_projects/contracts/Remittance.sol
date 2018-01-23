@@ -4,13 +4,14 @@ contract Remittance {
     struct RemittanceDetail {
         address sender;
         uint amount;
-        uint createdDate;
-        uint availableSeconds;
+        uint validDate;
         bytes32 passwordHash;
     }
 
+    uint maximumAvailableTimeIsDay = 86400;
 
-    mapping(address => RemittanceDetail) recipients;
+
+    mapping(address => RemittanceDetail[]) recipients;
 
     event LogRemittanceSuccess(address _whom, bytes32 _passwordHash, uint _availableSeconds);
     event LogMoneyExtracted(address _whoExtracted, uint howMuch);
@@ -19,42 +20,59 @@ contract Remittance {
     function Remittance() public {
     }
 
-    function remittance(address _whom, bytes32 _passwordHash, uint _availableSeconds) external payable {
-        require(_availableSeconds < 300);
+    function remittance(address _whom, bytes32 _passwordHash, uint _availableSeconds)
+        external
+        payable {
+        require(_availableSeconds < maximumAvailableTimeIsDay);
 
-        recipients[_whom] = RemittanceDetail({
+        recipients[_whom].push(RemittanceDetail({
             sender: msg.sender,
             amount: msg.value,
-            createdDate: now,
-            availableSeconds: _availableSeconds,
+            validDate: now + _availableSeconds,
             passwordHash: _passwordHash
-        });
+        }));
+
         LogRemittanceSuccess(_whom, _passwordHash, _availableSeconds);
     }
 
-    function withdraw(string _password) external payable {
-        require(recipients[msg.sender].passwordHash == keccak256(_password));
-        require(!isExpired(msg.sender));
+    function withdraw(bytes32 _passwordHash) external {
+        uint withdrawalAmount;
+        for (uint i = 0; i < recipients[msg.sender].length; i ++) {
+            RemittanceDetail memory recipient = recipients[msg.sender][i];
+            if (isValidForWithdrawal(recipient, _passwordHash)) {
+                withdrawalAmount += recipient.amount;
+                recipient.amount = 0;
+            }
+        }
 
-        msg.sender.send(recipients[msg.sender].amount);
+        require(withdrawalAmount != 0);
+        msg.sender.transfer(withdrawalAmount);
 
-        LogMoneyExtracted(msg.sender, recipients[msg.sender].amount);
+        LogMoneyExtracted(msg.sender, withdrawalAmount);
 
-        recipients[msg.sender].amount = 0;
     }
 
-    function claimMoneyBack(address _claimFromWhom) external payable {
-        require(isExpired(_claimFromWhom));
-        require(recipients[_claimFromWhom].sender == msg.sender);
-        require(recipients[_claimFromWhom].amount != 0);
-
-        msg.sender.send(recipients[_claimFromWhom].amount);
-
-        LogClaimHappened(recipients[_claimFromWhom].amount);
+    function isValidForWithdrawal(RemittanceDetail recipient, bytes32 _passwordHash)
+        private
+        constant
+        returns (bool valid) {
+        return recipient.passwordHash == _passwordHash && recipient.validDate >= now;
     }
 
-    function isExpired(address _who) internal constant returns (bool) {
-        return recipients[_who].createdDate + recipients[_who].availableSeconds <= now;
+    function claimMoneyBack(address _claimFromWhom) external {
+        uint claimAmount;
+        for (uint i = 0; i < recipients[_claimFromWhom].length; i ++) {
+            RemittanceDetail memory recipient = recipients[_claimFromWhom][i];
+            if (recipient.validDate < now && recipient.sender == msg.sender && recipient.amount > 0) {
+                claimAmount += recipient.amount;
+                recipient.amount = 0;
+            }
+        }
+
+        require(claimAmount != 0);
+        msg.sender.transfer(claimAmount);
+
+        LogClaimHappened(claimAmount);
     }
 
 }

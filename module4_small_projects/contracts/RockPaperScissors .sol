@@ -4,13 +4,15 @@ contract RockPaperScissors {
     struct Game {
         uint depositAmount;
         address player1;
-        bool player1Done;
+        uint8 player1Done;
         bytes32 player1ChoiceHash;
         address player2;
-        bool player2Done;
+        uint8 player2Done;
         bytes32 player2ChoiceHash;
 
     }
+
+    enum Choice {None, Rock, Paper, Scissors }
 
 
     mapping(string => Game) games;
@@ -34,24 +36,22 @@ contract RockPaperScissors {
         games[_gameName].player2 = _secondPlayer;
     }
 
-    //player choose rock, scissors, paper, and secret to hash, hide its choice
-    function playerMove(string _choice, string _secret, string _gameName) external payable {
+    //player choose rock, scissors, paper, hash it with secret and pass to function
+    function playerMove(bytes32 _choiceHashWithSecret, string _gameName) external payable {
         require(games[_gameName].depositAmount != 0);
         require(msg.value == games[_gameName].depositAmount);
         if (msg.sender == games[_gameName].player1) {
             // already made a choice before
-            require(!games[_gameName].player1Done);
+            require(games[_gameName].player1Done == 0);
 
-            //hash move with secret key, in order to not store in contract
-            games[_gameName].player1ChoiceHash = keccak256(_choice, _secret);
-            games[_gameName].player1Done = true;
+            games[_gameName].player1ChoiceHash = _choiceHashWithSecret;
+            games[_gameName].player1Done = 1;
         } else if (msg.sender == games[_gameName].player2) {
              // already made a choice before
-            require(!games[_gameName].player2Done);
+            require(games[_gameName].player2Done == 0);
 
-            //hash move with secret key, in order to not store in contract
-            games[_gameName].player2ChoiceHash = keccak256(_choice, _secret);
-            games[_gameName].player2Done = true;
+            games[_gameName].player2ChoiceHash = _choiceHashWithSecret;
+            games[_gameName].player2Done = 1;
         } else {
             revert();
         }
@@ -67,39 +67,39 @@ contract RockPaperScissors {
         require(msg.sender == games[_gameName].player1 || msg.sender == games[_gameName].player2);
 
         //both players moves must be done
-        require(games[_gameName].player1Done && games[_gameName].player2Done);
+        require(games[_gameName].player1Done == 1 && games[_gameName].player2Done == 1);
 
         //get choice names from hash
-        bytes32 player1Choice = getChoiceFromHash(games[_gameName].player1ChoiceHash, _player1Secret);
-        bytes32 player2Choice = getChoiceFromHash(games[_gameName].player2ChoiceHash, _player2Secret);
+        Choice player1Choice = getChoiceFromHash(games[_gameName].player1ChoiceHash, _player1Secret);
+        Choice player2Choice = getChoiceFromHash(games[_gameName].player2ChoiceHash, _player2Secret);
 
         address winnerAddress;
         //if players chose other that rock, paper, scissors`
-        if (player1Choice == bytes32("") && player2Choice != bytes32("")) {
+        if (player1Choice == Choice.None && player2Choice != Choice.None) {
             winnerAddress = games[_gameName].player2;
             return;
         }
-        if (player2Choice == "" && player1Choice != "") {
+        if (player2Choice == Choice.None && player1Choice != Choice.None) {
             winnerAddress = games[_gameName].player1;
         }
 
         // play criteria
-        if (player1Choice == bytes32("rock")) {
-            if (player2Choice == bytes32("scissors")) {
+        if (player1Choice == Choice.Rock) {
+            if (player2Choice == Choice.Scissors) {
                 winnerAddress = games[_gameName].player1;
-            } else if (player2Choice == bytes32("paper")) {
+            } else if (player2Choice == Choice.Paper) {
                 winnerAddress = games[_gameName].player2;
             }
-        } else if (player1Choice == bytes32("scissors")) {
-            if (player2Choice == bytes32("paper")) {
+        } else if (player1Choice == Choice.Scissors) {
+            if (player2Choice == Choice.Paper) {
                 winnerAddress = games[_gameName].player1;
-            } else if (player2Choice == bytes32("rock")) {
+            } else if (player2Choice == Choice.Rock) {
                 winnerAddress = games[_gameName].player2;
             }
-        } else if (player1Choice == bytes32("paper")) {
-            if (player2Choice == bytes32("rock")) {
+        } else if (player1Choice == Choice.Paper) {
+            if (player2Choice == Choice.Rock) {
                 winnerAddress = games[_gameName].player1;
-            } else if (player2Choice == bytes32("scissors")) {
+            } else if (player2Choice == Choice.Scissors) {
                 winnerAddress =  games[_gameName].player2;
             }
         }
@@ -115,15 +115,19 @@ contract RockPaperScissors {
 
     }
 
-    function getChoiceFromHash(bytes32 _hash, string _secret) private constant returns (bytes32) {
-        if (_hash == keccak256("rock", _secret)) {
-            return bytes32("rock");
-        } else if (_hash == keccak256("paper", _secret)) {
-            return bytes32("paper");
-        } else if (_hash == keccak256("scissors", _secret)) {
-            return bytes32("scissors");
+    function calculateKeccak(uint choice, string _secret) public constant returns (bytes32 hash) {
+        return keccak256(choice, _secret);
+    }
+
+    function getChoiceFromHash(bytes32 _hash, string _secret) private constant returns (Choice choice) {
+        if (_hash == keccak256(uint(Choice.Rock), _secret)) {
+            return Choice.Rock;
+        } else if (_hash == keccak256(uint(Choice.Paper), _secret)) {
+            return Choice.Paper;
+        } else if (_hash == keccak256(uint(Choice.Scissors), _secret)) {
+            return Choice.Scissors;
         }
-        return bytes32("");
+        return Choice.None;
     }
 
 }
