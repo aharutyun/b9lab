@@ -15,7 +15,6 @@ contract('Splitter', function(accounts) {
         instance = _instance;
       return instance.split({from: alice, value: transferAmount});
     }).then(function(_txObject) {
-        console.log(JSON.stringify(_txObject.logs));
         Utils.handleSuccess(_txObject);
         return instance.withdraw({from: bob});
     }).then(function(_bobWithdrawObject) {
