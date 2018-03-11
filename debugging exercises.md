@@ -75,7 +75,7 @@ contract PiggyBank {
     event LogPiggyBankCreated(bool success);
 
     function PiggyBank(bytes32 _hashedPassword) public { //consructor not payable, because of check balance
-        require(_hashedPassword != 0); // in case if deployer accidantly missed to provide passord hash
+        require(_hashedPassword != 0); // in case if deployer accidantly missed to provide password hash
         require(this.balance == 0); //make sure, the contract balance is zero, see https://github.com/ConsenSys/smart-contract-best-practices/issues/61
         owner = msg.sender;
         hashedPassword = _hashedPassword;
@@ -124,7 +124,7 @@ contract Store {
     }
 
     /*
-        1. function is not marked as payable so it cannot receive ether after version 0.4.0
+        1. function is not marked as payable so it cannot receive ether
         2. multiple interactions with different addresses/contracts, we need to have only one interaction per function, can be a problem here.
            i.e. wallet.send can be failed or/and warehouse.ship can be failed.
         3. wallet.send is not bubble exception, it only returns true/false, in this case, if send failes, shipment will be done in any case
