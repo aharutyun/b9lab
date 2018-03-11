@@ -219,10 +219,10 @@ contract Splitter {
     /*
         1. Totally wrong calculation, and contract balance can be drained.
            Let's say contract(balance) has already 9 ether, 
-           and 12 ether has been sent to contract, it means the calculation will be (9 + 12) /3 instead of 12/3.
+           and 12 ether has been sent to contract, it means the calculation will be (9 + 12) / 3 instead of 12 / 3.
            msg.value should splitted into 3 pieces
         2. there were cases, when msg.value cannot be splitted into 3 equally, it means contract will take more.
-           i.e. 10/3 will be 3,3 and 4. will be remained to contract
+           i.e. 10/3 will be 3,3 and 4. 4 ether will be remained to contract, it is not fair.
         3. multiple interactions in one function
         4. possible risk, that first address can be malicious contract, which will call fallback function recursively
            and will drain all the contract balance till gas limit all call stack will be exceeded.
